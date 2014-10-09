@@ -1,5 +1,4 @@
-
-# (C) 2013 CarrierWrt.org
+# (C) 2014 Thecarevoice.com
 
 #
 # Target: draginoV2
