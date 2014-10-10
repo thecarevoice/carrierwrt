@@ -19,7 +19,8 @@ define Customization/default
                 CONFIG_PACKAGE_luci-branding=y
 
 	TESTED := \
-		ar71xx/openwrt-ar71xx-generic-dragino2-rootfs-squashfs.bin\
+		ar71xx/openwrt-ar71xx-generic-dragino2-kernel.bin \
+		ar71xx/openwrt-ar71xx-generic-dragino2-rootfs-squashfs.bin \
 		ar71xx/openwrt-ar71xx-generic-dragino2-squashfs-sysupgrade.bin
 
 endef
