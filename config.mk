@@ -15,5 +15,5 @@ CONFIG_PACKAGES_LIST = libmicroxml libpolarssl
 
 # Base configuration
 CONFIG = \
-	CONFIG_BUSYBOX_CONFIG_WATCHDOG=n \
-	CONFIG_PACKAGE_watchdog=y
+	CONFIG_BUSYBOX_CONFIG_WATCHDOG=y \
+	CONFIG_PACKAGE_watchdog=n
