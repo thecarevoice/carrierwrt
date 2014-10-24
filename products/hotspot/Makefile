@@ -16,7 +16,14 @@ define Customization/default
 	CONFIG += \
 		CONFIG_PACKAGE_luci=y \
                 CONFIG_PACKAGE_luci-theme-bootstrap=y \
-                CONFIG_PACKAGE_luci-branding=y
+                CONFIG_PACKAGE_luci-branding=y \
+		CONFIG_PACKAGE_kmod-usb-serial=y \
+		CONFIG_PACKAGE_kmod-usb-serial-option=y \
+		CONFIG_PACKAGE_kmod-usb-serial-wwan=y \
+		CONFIG_PACKAGE_kmod-usb-net=y \
+		CONFIG_PACKAGE_kmod-usb-net-cdc-ncm=y \
+		CONFIG_PACKAGE_ncm=y \
+		CONFIG_PACKAGE_ncm-huawei-e3276=y
 
 	TESTED := \
 		ar71xx/openwrt-ar71xx-generic-dragino2-kernel.bin \

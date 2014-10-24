@@ -1,0 +1,25 @@
+diff -ur package/kernel/modules/usb.mk package/kernel/modules/usb.mk
+--- package/kernel/modules/usb.mk      2012-12-13 00:02:18.000000000 +0900
++++ package/kernel/modules/usb.mk   2012-12-13 00:00:53.000000000 +0900
+@@ -772,6 +772,21 @@
+ $(eval $(call KernelPackage,usb-net-rndis))
+
+
++define KernelPackage/usb-net-cdc-ncm
++  TITLE:=Support for CDC NCM connections
++  KCONFIG:=CONFIG_USB_NET_CDC_NCM
++  FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/cdc_ncm.ko
++  AUTOLOAD:=$(call AutoLoad,61,cdc_ncm)
++  $(call AddDepends/usb-net)
++endef
++
++define KernelPackage/usb-net-cdc-ncm/description
++ Kernel support for CDC NCM connections
++endef
++
++$(eval $(call KernelPackage,usb-net-cdc-ncm))
++
++
+ define KernelPackage/usb-net-sierrawireless
+   TITLE:=Support for Sierra Wireless devices
+   KCONFIG:=CONFIG_USB_SIERRA_NET

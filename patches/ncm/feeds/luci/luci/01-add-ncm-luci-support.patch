@@ -1,0 +1,794 @@
+diff --git a/applications/luci-ncm-status/Makefile b/applications/luci-ncm-status/Makefile
+new file mode 100644
+index 0000000..81a96f6
+--- /dev/null
++++ b/applications/luci-ncm-status/Makefile
+@@ -0,0 +1,2 @@
++include ../../build/config.mk
++include ../../build/module.mk
+\ No newline at end of file
+diff --git a/applications/luci-ncm-status/luasrc/controller/ncmstatus.lua b/applications/luci-ncm-status/luasrc/controller/ncmstatus.lua
+new file mode 100644
+index 0000000..cfb6b20
+--- /dev/null
++++ b/applications/luci-ncm-status/luasrc/controller/ncmstatus.lua
+@@ -0,0 +1,8 @@
++module("luci.controller.ncmstatus", package.seeall)
++
++function index()
++	local page
++
++	page = entry({"admin", "status", "ncm"}, template("ncm/status"), _("Ncm status"))
++	page.dependent = true
++end
+diff --git a/applications/luci-ncm-status/luasrc/view/ncm/status.htm b/applications/luci-ncm-status/luasrc/view/ncm/status.htm
+new file mode 100644
+index 0000000..5568b7f
+--- /dev/null
++++ b/applications/luci-ncm-status/luasrc/view/ncm/status.htm
+@@ -0,0 +1,283 @@
++<%#
++LuCI - Lua Configuration Interface
++Copyright 2008 Steven Barth <steven@midlink.org>
++Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
++
++Licensed under the Apache License, Version 2.0 (the "License");
++you may not use this file except in compliance with the License.
++You may obtain a copy of the License at
++
++	http://www.apache.org/licenses/LICENSE-2.0
++
++-%>
++
++<%
++	require "luci.sys"
++	require "luci.fs"
++
++	local rv = {
++		gothw		= "0",
++		gotcarrier	= "0",
++		gotsignal	= "0",
++		hwrefresh	= "0",
++		modemdev	= "",
++		driver		= "",
++		vendor		= "",
++		model		= "",
++		notification	= "",
++		firmware	= "",
++		imei		= "",
++		provider	= "",
++		mode		= "",
++		downlink	= "",
++		uplink		= "",
++		cellid		= "",
++		lac		= "",
++		network		= "",
++		signal		= "",
++		rssi		= "",
++		csq		= "",
++		rcsp		= "",
++		ecio		= ""
++	}
++
++	if luci.http.formvalue("gothw") == "1" then
++		rv["gothw"] = luci.http.formvalue("gothw") or "0"
++		rv["modemdev"] = luci.http.formvalue("modemdev")
++		rv["driver"] = luci.http.formvalue("driver")
++		rv["gotcarrier"] = luci.http.formvalue("gotcarrier") or "0"
++		rv["gotsignal"] = luci.http.formvalue("gotsignal") or "0"
++		rv["hwrefresh"] = luci.http.formvalue("hwrefresh") or "0"
++	else
++		local uci = require "luci.model.uci".cursor()
++		if uci:get("network", "wan", "proto") == "ncm" then
++			rv["modemdev"] = uci:get("network", "wan", "device") or "0"
++		else
++			if luci.http.formvalue("status") == "1" then
++
++				rv["notification"] = "[ WAN is not using NCM protocol ]"
++				rv["hwrefresh"] = "0"
++				rv["gothw"] = "0"
++				rv["driver"] = "-"
++
++				luci.http.prepare_content("application/json")
++				luci.http.write_json(rv)
++
++				return
++			end
++
++		end
++
++	end
++
++	if ( luci.http.formvalue("status") == "1" and rv["driver"] ~= "-" ) then
++
++		if luci.fs.access(rv["modemdev"]) then
++
++			if rv["gothw"] == "0" then
++
++				local modemhw = luci.sys.exec(table.concat({"/usr/bin/gcom -d ", rv["modemdev"], " -s /etc/gcom/ncm/getcardinfo.gcom"}, ""))
++
++				for k, v in string.gmatch(modemhw, "(%w+) '(.-)'") do
++					rv[k] = v
++				end
++
++				if rv["driver"] == "" then
++					rv["driver"] = "-"
++				end
++
++				if ( rv["vendor"] == "" or rv["model"] == "" or rv["firmware"] == "" or rv["imei"] == "" or rv["driver"] == "" ) then
++					rv["gothw"] = "0"
++				elseif (rv["driver"] ~= "-" and
++						luci.fs.access(table.concat({"/etc/gcom/ncm/carrier/",rv["driver"], ".gcom"}, "")) and 
++						luci.fs.access(table.concat({"/etc/gcom/ncm/signal/", rv["driver"], ".gcom"}, ""))) then
++					rv['gothw'] = "1"
++				else
++					rv["notification"] = " [ Unsupported dongle ]";
++					rv["driver"] = "-"
++					rv["gothw"] = "0"
++					rv["hwrefresh"] = "1"
++				end
++
++			elseif rv["gotcarrier"] == "0" then
++
++				if rv["driver"] ~= "-" then
++
++					local modemcarrier = luci.sys.exec(table.concat({"/usr/bin/gcom -d ", rv["modemdev"], " -s /etc/gcom/ncm/carrier/", rv["driver"], ".gcom"}, ""))
++
++					for k, v in string.gmatch(modemcarrier, "(%w+) '(.-)'") do
++						rv[k] = v
++					end
++
++					if ( rv["provider"] == "" or rv["downlink"] == "" or rv["uplink"] == "" or rv["mode"] == "" ) then
++						rv["gotcarrier"] = "0"
++					else
++						rv["gotcarrier"] = "1"
++					end
++
++				else
++					rv["gotcarrier"] = "1"
++				end
++
++			else
++
++				if rv["driver"] ~= "-" then
++
++					local modemsignal = luci.sys.exec(table.concat({"/usr/bin/gcom -d ", rv["modemdev"], " -s /etc/gcom/ncm/signal/", rv["driver"], ".gcom"}, ""))
++
++					for k, v in string.gmatch(modemsignal, "(%w+) '(.-)'") do
++						rv[k] = v
++					end
++					rv["gotsignal"] = "1"
++				end
++
++			end
++		else
++
++			rv["notification"] = table.concat({"[ ", rv["modemdev"], ": Device not present. ]"}, "")
++
++		end
++
++	end
++
++	if ( luci.http.formvalue("status") == "1" ) then
++
++		luci.http.prepare_content("application/json")
++		luci.http.write_json(rv)
++
++		return
++
++	end
++
++-%>
++
++<%+header%>
++
++<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
++<script type="text/javascript" src="<%=resource%>/ncm_xhr.js"></script>
++<script type="text/javascript">//<![CDATA[
++
++	function capitalize(s)
++	{
++		return s.toLowerCase().replace( /\b./g, function(a){ return a.toUpperCase(); } );
++	};
++
++	XHR2.poll(5, '<%=REQUEST_URI%>', { status: 1 },
++		function(x, info)
++		{
++
++			var e;
++
++			if (e = document.getElementById('notification'))
++				e.innerHTML = info.notification;
++
++			if (( gothwD == "0" && info.gothw == "1" ) || ( info.hwrefresh == "1" )) {
++
++				if (e = document.getElementById('name'))
++					e.innerHTML = capitalize(info.vendor) + " " + capitalize(info.model);
++
++				if (e = document.getElementById('firmware'))
++					e.innerHTML = info.firmware;
++
++				if (e = document.getElementById('imei'))
++					e.innerHTML = info.imei;
++			}
++
++			if ( gotcarrierD == "0" && info.gotcarrier == "1" ) {
++
++				if (e = document.getElementById('provider'))
++					e.innerHTML = info.provider;
++
++				if (e = document.getElementById('linkspeed'))
++					if ( info.downlink != "" && info.uplink != "" )
++						e.innerHTML = info.downlink + " / " + info.uplink ;
++
++				if (e = document.getElementById('mode'))
++					e.innerHTML = info.mode;
++
++			}
++
++			if ( info.gotsignal == "1" ) {
++
++				if (e = document.getElementById('cellid'))
++					e.innerHTML = info.cellid;
++
++				if (e = document.getElementById('lac'))
++					e.innerHTML = info.lac;
++
++				if (e = document.getElementById('network'))
++					e.innerHTML = info.network;
++
++				if (e = document.getElementById('signal'))
++					e.innerHTML = info.signal;
++
++				if (e = document.getElementById('csq'))
++					e.innerHTML = info.csq;
++
++				if (e = document.getElementById('rssi'))
++					e.innerHTML = info.rssi;
++
++				if (e = document.getElementById('rcsp'))
++					e.innerHTML = info.rcsp;
++
++				if (e = document.getElementById('ecio'))
++					e.innerHTML = info.ecio;
++
++			}
++
++			modemdevD = info.modemdev;
++			driverD = info.driver;
++			gothwD = info.gothw;
++			gotcarrierD = info.gotcarrier;
++			hwrefreshD = info.hwrefresh;
++			gotsignalD = info.gotsignal;
++
++		}
++	);
++
++//]]></script>
++
++<h2><a id="content" name="content"><%:NCM Status%></a></h2>
++<small style="color: #777;" id="notification"></small>
++
++<fieldset class="cbi-section">
++	<legend id="name"><%:Detecting dongle%></legend>
++
++	<table width="100%" cellspacing="10">
++		<tr><td width="33%"><%:Firmware version%></td><td id="firmware"></td></tr>
++		<tr><td width="33%"><%:IMEI%></td><td id="imei"></td></tr>
++	</table>
++</fieldset>
++
++<fieldset class="cbi-section">
++	<legend><%:Network%></legend>
++
++	<table width="100%" cellspacing="10">
++		<tr><td width="33%"><%:Provider%></td><td id="provider"></td></tr>
++		<tr><td width="33%"><%:Downlink/Uplink%></td><td id="linkspeed"></td></tr>
++		<tr><td width="33%"><%:Mode%></td><td id="mode"></td></tr>
++	</table>
++</fieldset>
++
++<fieldset class="cbi-section">
++	<legend><%:Cell%></legend>
++
++	<table width="100%" cellspacing="10">
++		<tr><td width="33%"><%:Location Area Code%></td><td id="lac"></td></tr>
++		<tr><td width="33%"><%:Cell ID%></td><td id="cellid"></td></tr>
++	</table>
++</fieldset>
++
++<fieldset class="cbi-section">
++	<legend><%:Signal level%></legend>
++
++	<table width="100%" cellspacing="10">
++		<tr><td width="33%"><%:Network%></td><td id="network"></td></tr>
++		<tr><td width="33%"><%:Signal strength%></td><td id="signal"></td></tr>
++		<tr><td width="33%"><%:CSQ%></td><td id="csq"></td></tr>
++		<tr><td width="33%"><%:RSSI%></td><td id="rssi"></td></tr>
++		<tr><td width="33%"><%:RCSP%></td><td id="rcsp"></td></tr>
++		<tr><td width="33%"><%:ECIO%></td><td id="ecio"></td></tr>
++	</table>
++</fieldset>
++<%+footer%>
+diff --git a/applications/luci-ncm-status/root/www/luci-static/resources/ncm_xhr.js b/applications/luci-ncm-status/root/www/luci-static/resources/ncm_xhr.js
+new file mode 100644
+index 0000000..c01e8ac
+--- /dev/null
++++ b/applications/luci-ncm-status/root/www/luci-static/resources/ncm_xhr.js
+@@ -0,0 +1,254 @@
++/*
++ * xhr.js - XMLHttpRequest helper class
++ * (c) 2008-2010 Jo-Philipp Wich
++ */
++
++var gothwD = "0";
++var gotcarrierD = "0";
++var gotsignalD = "0";
++var hwrefreshD = "0";
++var modemdevD = ""
++var driverD = ""
++
++XHR2 = function()
++{
++	this.reinit = function()
++	{
++		if (window.XMLHttpRequest) {
++			this._xmlHttp = new XMLHttpRequest();
++		}
++		else if (window.ActiveXObject) {
++			this._xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
++		}
++		else {
++			alert("dongle_xhr.js: XMLHttpRequest is not supported by this browser!");
++		}
++	}
++
++	this.busy = function() {
++		if (!this._xmlHttp)
++			return false;
++
++		switch (this._xmlHttp.readyState)
++		{
++			case 1:
++			case 2:
++			case 3:
++				return true;
++
++			default:
++				return false;
++		}
++	}
++
++	this.abort = function() {
++		if (this.busy())
++			this._xmlHttp.abort();
++	}
++
++	this.get = function(url,data,callback)
++	{
++		this.reinit();
++
++		var xhr2  = this._xmlHttp;
++		var code = this._encode(data);
++
++		url = location.protocol + '//' + location.host + url;
++
++		if (code)
++			if (url.substr(url.length-1,1) == '&')
++				url += code;
++			else
++				url += '?' + code;
++
++		xhr2.open('GET', url, true);
++
++		xhr2.onreadystatechange = function()
++		{
++			if (xhr2.readyState == 4) {
++				var json = null;
++				if (xhr2.getResponseHeader("Content-Type") == "application/json") {
++					try {
++						json = eval('(' + xhr2.responseText + ')');
++					}
++					catch(e) {
++						json = null;
++					}
++				}
++
++				callback(xhr2, json);
++			}
++		}
++
++		xhr2.send(null);
++	}
++
++	this.post = function(url,data,callback)
++	{
++		this.reinit();
++
++		var xhr2  = this._xmlHttp;
++		var code = this._encode(data);
++
++		xhr2.onreadystatechange = function()
++		{
++			if (xhr2.readyState == 4)
++				callback(xhr2);
++		}
++
++		xhr2.open('POST', url, true);
++		xhr2.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
++		xhr2.setRequestHeader('Content-length', code.length);
++		xhr2.setRequestHeader('Connection', 'close');
++		xhr2.send(code);
++	}
++
++	this.cancel = function()
++	{
++		this._xmlHttp.onreadystatechange = function(){};
++		this._xmlHttp.abort();
++	}
++
++	this.send_form = function(form,callback,extra_values)
++	{
++		var code = '';
++
++		for (var i = 0; i < form.elements.length; i++)
++		{
++			var e = form.elements[i];
++
++			if (e.options)
++			{
++				code += (code ? '&' : '') +
++					form.elements[i].name + '=' + encodeURIComponent(
++						e.options[e.selectedIndex].value
++					);
++			}
++			else if (e.length)
++			{
++				for (var j = 0; j < e.length; j++)
++					if (e[j].name) {
++						code += (code ? '&' : '') +
++							e[j].name + '=' + encodeURIComponent(e[j].value);
++					}
++			}
++			else
++			{
++				code += (code ? '&' : '') +
++					e.name + '=' + encodeURIComponent(e.value);
++			}
++		}
++
++		if (typeof extra_values == 'object')
++			for (var key in extra_values)
++				code += (code ? '&' : '') +
++					key + '=' + encodeURIComponent(extra_values[key]);
++
++		return(
++			(form.method == 'get')
++				? this.get(form.getAttribute('action'), code, callback)
++				: this.post(form.getAttribute('action'), code, callback)
++		);
++	}
++
++	this._encode = function(obj)
++	{
++		obj = obj ? obj : { };
++		obj['gothw'] = gothwD;
++		obj['gotcarrier'] = gotcarrierD;
++		obj['gotsignal'] = gotsignalD;
++		obj['hwrefresh'] = hwrefreshD;
++		obj['modemdev'] = modemdevD;
++		obj['driver'] = driverD;
++		obj['_'] = Math.random();
++
++		if (typeof obj == 'object')
++		{
++			var code = '';
++			var self = this;
++
++			for (var k in obj)
++				code += (code ? '&' : '') +
++					k + '=' + encodeURIComponent(obj[k]);
++
++			return code;
++		}
++
++		return obj;
++	}
++}
++
++XHR2.get = function(url, data, callback)
++{
++	(new XHR2()).get(url, data, callback);
++}
++
++XHR2.poll = function(interval, url, data, callback)
++{
++	if (isNaN(interval) || interval < 1)
++		interval = 5;
++
++	if (!XHR2._q)
++	{
++		XHR2._t = 0;
++		XHR2._q = [ ];
++		XHR2._r = function() {
++			for (var i = 0, e = XHR2._q[0]; i < XHR2._q.length; e = XHR2._q[++i])
++			{
++				if (!(XHR2._t % e.interval) && !e.xhr2.busy())
++					e.xhr2.get(e.url, e.data, e.callback);
++			}
++
++			XHR2._t++;
++		};
++	}
++
++	XHR2._q.push({
++		interval: interval,
++		callback: callback,
++		url:      url,
++		data:     data,
++		xhr2:      new XHR2()
++	});
++
++	XHR2.run();
++}
++
++XHR2.halt = function()
++{
++	if (XHR2._i)
++	{
++		/* show & set poll indicator */
++		try {
++			document.getElementById('xhr_poll_status').style.display = '';
++			document.getElementById('xhr_poll_status_on').style.display = 'none';
++			document.getElementById('xhr_poll_status_off').style.display = '';
++		} catch(e) { }
++
++		window.clearInterval(XHR2._i);
++		XHR2._i = null;
++	}
++}
++
++XHR2.run = function()
++{
++	if (XHR2._r && !XHR2._i)
++	{
++		/* show & set poll indicator */
++		try {
++			document.getElementById('xhr_poll_status').style.display = '';
++			document.getElementById('xhr_poll_status_on').style.display = '';
++			document.getElementById('xhr_poll_status_off').style.display = 'none';
++		} catch(e) { }
++
++		/* kick first round manually to prevent one second lag when setting up
++		 * the poll interval */
++		XHR2._r();
++		XHR2._i = window.setInterval(XHR2._r, 1000);
++	}
++}
++
++XHR2.running = function()
++{
++	return !!(XHR2._r && XHR2._i);
++}
+diff --git a/contrib/package/luci/Makefile b/contrib/package/luci/Makefile
+index 5f0d315..f9af3a0 100644
+--- a/contrib/package/luci/Makefile
++++ b/contrib/package/luci/Makefile
+@@ -201,6 +201,7 @@ $(eval $(call protocol,ppp,Support for PPP/PPPoE/PPPoA/PPtP))
+ $(eval $(call protocol,ipv6,Support for DHCPv6/6in4/6to4/6rd/DS-Lite))
+ $(eval $(call protocol,3g,Support for 3G,+PACKAGE_luci-proto-3g:comgt))
+ $(eval $(call protocol,relay,Support for relayd pseudo bridges,+PACKAGE_luci-proto-relay:relayd))
++$(eval $(call protocol,ncm,Support for NCM protocol:ncm))
+ 
+ 
+ ### Community Packages ###
+@@ -325,6 +326,9 @@ $(eval $(call application,freifunk-widgets,Widgets for the Freifunk index page,\
+ $(eval $(call application,meshwizard, Shellscript based wizard to setup mesh networks,\
+         +PACKAGE_luci-app-freifunk-meshwizard:meshwizard))
+ 
++$(eval $(call application,ncm-status, Diagnostics for NCM dongle,\
++	+PACKAGE_luci-app-ncm-status:luci-proto-ncm))
++
+ $(eval $(call application,olsr,OLSR configuration and status module,\
+ 	+olsrd +olsrd-mod-jsoninfo +luci-lib-luaneightbl))
+ 
+diff --git a/protocols/ncm/Makefile b/protocols/ncm/Makefile
+new file mode 100644
+index 0000000..f7fac77
+--- /dev/null
++++ b/protocols/ncm/Makefile
+@@ -0,0 +1,2 @@
++include ../../build/config.mk
++include ../../build/module.mk
+diff --git a/protocols/ncm/luasrc/model/cbi/admin_network/proto_ncm.lua b/protocols/ncm/luasrc/model/cbi/admin_network/proto_ncm.lua
+new file mode 100644
+index 0000000..dfaa02e
+--- /dev/null
++++ b/protocols/ncm/luasrc/model/cbi/admin_network/proto_ncm.lua
+@@ -0,0 +1,120 @@
++--[[
++LuCI - Lua Configuration Interface
++
++Copyright 2011 Jo-Philipp Wich <xm@subsignal.org>
++
++Licensed under the Apache License, Version 2.0 (the "License");
++you may not use this file except in compliance with the License.
++You may obtain a copy of the License at
++
++	http://www.apache.org/licenses/LICENSE-2.0
++]]--
++
++local map, section, net = ...
++
++local device, apn, mode, pincode, authtype, username, password
++local delay, bcast, defaultroute, peerdns, dns, metric, clientid, vendorclass
++
++
++device = section:taboption("general", Value, "device", translate("Modem device"))
++device.rmempty = false
++
++local device_suggestions = nixio.fs.glob("/dev/tty[A-Z]*")
++	or nixio.fs.glob("/dev/tts/*")
++
++if device_suggestions then
++	local node
++	for node in device_suggestions do
++		device:value(node)
++	end
++end
++
++mode = section:taboption("general", ListValue, "mode", translate("Service mode"))
++mode:value("2g", translate("2G only"))
++mode:value("3g", translate("3G only"))
++mode:value("lte", translate("LTE only"))
++mode:value("prefer3g", translate("Prefer 3G"))
++mode:value("preferlte", translate("Prefer LTE"))
++mode:value("auto", translate("Automatic / Any"))
++mode.rmempty = false
++mode.default = "auto"
++
++
++apn = section:taboption("general", Value, "apn", translate("APN"))
++
++
++pincode = section:taboption("general", Value, "pincode", translate("PIN"))
++
++
++authtype = section:taboption("general", ListValue, "authtype", translate("Authentication type"))
++authtype:value("none", translate("None"))
++authtype:value("cleartext", translate("Clear text"))
++authtype:value("pap", translate("PAP"))
++authtype:value("chap", translate("CHAP"))
++authtype.rmempty = false
++authtype.default = "none"
++
++
++username = section:taboption("general", Value, "username", translate("PAP/CHAP username"))
++
++
++password = section:taboption("general", Value, "password", translate("PAP/CHAP password"))
++password.password = true
++
++
++bcast = section:taboption("advanced", Flag, "broadcast",
++	translate("Use broadcast flag"),
++	translate("Required for certain ISPs, e.g. Charter with DOCSIS 3"))
++
++bcast.default = bcast.disabled
++
++
++defaultroute = section:taboption("advanced", Flag, "defaultroute",
++	translate("Use default gateway"),
++	translate("If unchecked, no default route is configured"))
++
++defaultroute.default = defaultroute.enabled
++
++
++peerdns = section:taboption("advanced", Flag, "peerdns",
++	translate("Use DNS servers advertised by peer"),
++	translate("If unchecked, the advertised DNS server addresses are ignored"))
++
++peerdns.default = peerdns.enabled
++
++
++dns = section:taboption("advanced", DynamicList, "dns",
++	translate("Use custom DNS servers"))
++
++dns:depends("peerdns", "")
++dns.datatype = "ipaddr"
++dns.cast     = "string"
++
++
++delay = section:taboption("advanced", Value, "delay",
++	translate("Dongle connection delay"))
++delay.default	  = "20"
++delay.placeholder = translate("seconds")
++delay.datatype	  = "uinteger"
++
++
++metric = section:taboption("advanced", Value, "metric",
++	translate("Use gateway metric"))
++
++metric.placeholder = "0"
++metric.datatype	   = "uinteger"
++
++clientid = section:taboption("advanced", Value, "clientid",
++	translate("Client ID to send when requesting DHCP"))
++
++
++vendorclass = section:taboption("advanced", Value, "vendorid",
++	translate("Vendor Class to send when requesting DHCP"))
++
++
++luci.tools.proto.opt_macaddr(section, ifc, translate("Override MAC address"))
++
++
++mtu = section:taboption("advanced", Value, "mtu", translate("Override MTU"))
++mtu.placeholder = "1492"
++mtu.datatype	= "max(9200)"
+diff --git a/protocols/ncm/luasrc/model/network/proto_ncm.lua b/protocols/ncm/luasrc/model/network/proto_ncm.lua
+new file mode 100644
+index 0000000..dd8dbe4
+--- /dev/null
++++ b/protocols/ncm/luasrc/model/network/proto_ncm.lua
+@@ -0,0 +1,60 @@
++--[[
++LuCI - Network model - 3G, PPP, PPtP, PPPoE and PPPoA protocol extension
++
++Copyright 2011 Jo-Philipp Wich <xm@subsignal.org>
++
++Licensed under the Apache License, Version 2.0 (the "License");
++you may not use this file except in compliance with the License.
++You may obtain a copy of the License at
++
++	http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++]]--
++
++local netmod = luci.model.network
++
++local _, p
++for _, p in ipairs({"ncm"}) do
++
++	local proto = netmod:register_protocol(p)
++
++	function proto.get_i18n(self)
++		return luci.i18n.translate("NCM")
++	end
++
++	function proto.ifname(self)
++		return p .. "-" .. self.sid
++	end
++
++	function proto.opkg_package(self)
++		return "kmod-usb-net-cdc-ncm"
++	end
++
++	function proto.is_installed(self)
++		return nixio.fs.access("/lib/netifd/proto/ncm.sh")
++	end
++
++	function proto.is_floating(self)
++		return false
++	end
++
++	function proto.is_virtual(self)
++		return false
++	end
++
++	function proto.get_interfaces(self)
++		return netmod.protocol.get_interfaces(self)
++	end
++
++	function proto.contains_interface(self, ifc)
++		return netmod.protocol.contains_interface(self, ifc)
++	end
++
++	netmod:register_pattern_virtual("^%s-%%w" % p)
++end

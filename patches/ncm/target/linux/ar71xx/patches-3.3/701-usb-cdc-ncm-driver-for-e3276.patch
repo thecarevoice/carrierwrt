@@ -1,0 +1,137 @@
+--- a/drivers/net/usb/cdc_ncm.c	2012-06-01 07:16:13.000000000 +0000
++++ b/drivers/net/usb/cdc_ncm.c	2014-10-21 15:03:00.029641107 +0000
+@@ -140,14 +140,6 @@
+ static struct usb_driver cdc_ncm_driver;
+ static const struct ethtool_ops cdc_ncm_ethtool_ops;
+ 
+-static const struct usb_device_id cdc_devs[] = {
+-	{ USB_INTERFACE_INFO(USB_CLASS_COMM,
+-		USB_CDC_SUBCLASS_NCM, USB_CDC_PROTO_NONE),
+-		.driver_info = (unsigned long)&cdc_ncm_info,
+-	},
+-	{
+-	},
+-};
+ 
+ MODULE_DEVICE_TABLE(usb, cdc_devs);
+ 
+@@ -541,10 +533,12 @@
+ 	    (ctx->ether_desc == NULL) || (ctx->control != intf))
+ 		goto error;
+ 
+-	/* claim interfaces, if any */
+-	temp = usb_driver_claim_interface(driver, ctx->data, dev);
+-	if (temp)
+-		goto error;
++	/* claim data interface, if different from control */
++	if (ctx->data != ctx->control) {
++		temp = usb_driver_claim_interface(driver, ctx->data, dev);
++		if (temp)
++			goto error;
++	}
+ 
+ 	iface_no = ctx->data->cur_altsetting->desc.bInterfaceNumber;
+ 
+@@ -621,6 +615,10 @@
+ 	if (ctx == NULL)
+ 		return;		/* no setup */
+ 
++	/* handle devices with combined control and data interface */
++	if (ctx->control == ctx->data)
++		ctx->data = NULL;
++
+ 	/* disconnect master --> disconnect slave */
+ 	if (intf == ctx->control && ctx->data) {
+ 		usb_set_intfdata(ctx->data, NULL);
+@@ -1208,6 +1206,46 @@
+ 	.rx_fixup = cdc_ncm_rx_fixup,
+ 	.tx_fixup = cdc_ncm_tx_fixup,
+ };
++/* Same as cdc_ncm_info, but with FLAG_WWAN */
++static const struct driver_info wwan_info = {
++	.description = "Mobile Broadband Network Device",
++	.flags = FLAG_POINTTOPOINT | FLAG_NO_SETINT | FLAG_MULTI_PACKET
++			| FLAG_WWAN,
++	.bind = cdc_ncm_bind,
++	.unbind = cdc_ncm_unbind,
++	.check_connect = cdc_ncm_check_connect,
++	.manage_power = cdc_ncm_manage_power,
++	.status = cdc_ncm_status,
++	.rx_fixup = cdc_ncm_rx_fixup,
++	.tx_fixup = cdc_ncm_tx_fixup,
++};
++
++static const struct usb_device_id cdc_devs[] = {
++	{ USB_INTERFACE_INFO(USB_CLASS_COMM,
++		USB_CDC_SUBCLASS_NCM, USB_CDC_PROTO_NONE),
++		.driver_info = (unsigned long)&cdc_ncm_info,
++	},
++	/* tag Huawei devices as wwan */
++	{ USB_VENDOR_AND_INTERFACE_INFO(0x12d1,
++					USB_CLASS_COMM,
++					USB_CDC_SUBCLASS_NCM,
++					USB_CDC_PROTO_NONE),
++	  .driver_info = (unsigned long)&wwan_info,
++	},
++
++	/* Huawei NCM devices disguised as vendor specific */
++	{ USB_VENDOR_AND_INTERFACE_INFO(0x12d1, 0xff, 0x02, 0x16),
++	  .driver_info = (unsigned long)&wwan_info,
++	},
++	{ USB_VENDOR_AND_INTERFACE_INFO(0x12d1, 0xff, 0x02, 0x46),
++	  .driver_info = (unsigned long)&wwan_info,
++	},
++	{ USB_VENDOR_AND_INTERFACE_INFO(0x12d1, 0xff, 0x02, 0x76),
++	  .driver_info = (unsigned long)&wwan_info,
++	},
++	{
++	},
++};
+ 
+ static struct usb_driver cdc_ncm_driver = {
+ 	.name = "cdc_ncm",
+@@ -1235,3 +1273,4 @@
+ MODULE_AUTHOR("Hans Petter Selasky");
+ MODULE_DESCRIPTION("USB CDC NCM host driver");
+ MODULE_LICENSE("Dual BSD/GPL");
++
+diff -ur a/include/linux/usb.h b/include/linux/usb.h
+--- a/include/linux/usb.h	2012-06-01 16:16:13.000000000 +0900
++++ b/include/linux/usb.h	2012-12-12 23:27:35.000000000 +0900
+@@ -531,6 +531,7 @@
+ extern int usb_reset_device(struct usb_device *dev);
+ extern void usb_queue_reset_device(struct usb_interface *dev);
+ 
++extern struct usb_device *usb_find_device_by_name(const char *name);
+ 
+ /* USB autosuspend and autoresume */
+ #ifdef CONFIG_USB_SUSPEND
+@@ -775,6 +776,27 @@
+ 	.bInterfaceSubClass = (sc), \
+ 	.bInterfaceProtocol = (pr)
+ 
++/**
++ * USB_VENDOR_AND_INTERFACE_INFO - describe a specific usb vendor with a class of interfaces
++ * @vend: the 16 bit USB Vendor ID
++ * @cl: bInterfaceClass value
++ * @sc: bInterfaceSubClass value
++ * @pr: bInterfaceProtocol value
++ *
++ * This macro is used to create a struct usb_device_id that matches a
++ * specific vendor with a specific class of interfaces.
++ *
++ * This is especially useful when explicitly matching devices that have
++ * vendor specific bDeviceClass values, but standards-compliant interfaces.
++ */
++#define USB_VENDOR_AND_INTERFACE_INFO(vend, cl, sc, pr) \
++        .match_flags = USB_DEVICE_ID_MATCH_INT_INFO \
++                | USB_DEVICE_ID_MATCH_VENDOR, \
++        .idVendor = (vend), \
++        .bInterfaceClass = (cl), \
++        .bInterfaceSubClass = (sc), \
++        .bInterfaceProtocol = (pr)
++
+ /* ----------------------------------------------------------------------- */
+ 
+ /* Stuff for dynamic usb ids */
+Only in orig/attitude_adjustment/build_dir: linux-ar71xx_generic

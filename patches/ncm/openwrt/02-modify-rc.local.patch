@@ -1,0 +1,10 @@
+diff --git package/base-files/files/etc/rc.local package/base-files/files/etc/rc.local
+index 5639477..7afa54f 100644
+--- package/base-files/files/etc/rc.local
++++ package/base-files/files/etc/rc.local
+@@ -1,4 +1,5 @@
+ # Put your custom commands here that should be executed once
+ # the system init finished. By default this file does nothing.
+ 
++sleep 30 && /etc/init.d/network restart && sleep 5 && ifconfig wwan0 up
+ exit 0
