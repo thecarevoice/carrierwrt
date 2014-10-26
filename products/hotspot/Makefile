@@ -23,7 +23,9 @@ define Customization/default
 		CONFIG_PACKAGE_kmod-usb-net=y \
 		CONFIG_PACKAGE_kmod-usb-net-cdc-ncm=y \
 		CONFIG_PACKAGE_ncm=y \
-		CONFIG_PACKAGE_ncm-huawei-e3276=y
+		CONFIG_PACKAGE_ncm-huawei-e3276=y \
+		CONFIG_PACKAGE_luci-app-ncm-status=y \
+		CONFIG_PACKAGE_luci-proto-ncm=y
 
 	TESTED := \
 		ar71xx/openwrt-ar71xx-generic-dragino2-kernel.bin \
