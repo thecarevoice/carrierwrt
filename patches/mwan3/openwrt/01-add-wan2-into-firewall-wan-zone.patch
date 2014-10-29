@@ -1,0 +1,12 @@
+diff --git package/firewall/files/firewall.config package/firewall/files/firewall.config
+index acfb5e5..4a9dfaf 100644
+--- package/firewall/files/firewall.config
++++ package/firewall/files/firewall.config
+@@ -17,6 +17,7 @@ config zone
+ 	option name		wan
+ 	list   network		'wan'
+ 	list   network		'wan6'
++	list   network          'wan2'
+ 	option input		REJECT
+ 	option output		ACCEPT
+ 	option forward		REJECT
