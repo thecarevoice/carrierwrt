@@ -63,7 +63,6 @@ define Package/ncm/install
 	$(INSTALL_BIN) ./files/lib/netifd/proto/ncm.sh $(1)/lib/netifd/proto/
 	$(INSTALL_DATA) ./files/etc/gcom/ncm/getcardinfo.gcom $(1)/etc/gcom/ncm/
 	$(INSTALL_DATA) ./files/etc/modules.d/60-usb-serial $(1)/etc/modules.d/60-usb-serial
-	$(INSTALL_DATA) ./files/etc/config/wireless $(1)/etc/config/wireless
 	$(INSTALL_DATA) ./files/etc/config/network $(1)/etc/config/network
 endef
 

@@ -15,7 +15,7 @@ config wifi-iface
 	option device 'radio0'
 	option network 'lan'
 	option mode 'ap'
-	option ssid 'OpenWrt'
+	option ssid 'KangYu 康语'
 	option key 'dragino-dragino'
 	option encryption 'psk2'
 
