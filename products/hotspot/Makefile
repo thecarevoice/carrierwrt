@@ -27,7 +27,8 @@ define Customization/default
 		CONFIG_PACKAGE_luci-app-ncm-status=y \
 		CONFIG_PACKAGE_luci-proto-ncm=y \
 		CONFIG_PACKAGE_mwan3=y \
-		CONFIG_PACKAGE_luci-app-mwan3=y
+		CONFIG_PACKAGE_luci-app-mwan3=y \
+		CONFIG_PACKAGE_kangyu=y
 
 	TESTED := \
 		ar71xx/openwrt-ar71xx-generic-dragino2-kernel.bin \
