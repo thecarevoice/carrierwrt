@@ -11,7 +11,8 @@ CONFIG_LUCI_LIST = luci
 # Packages revision/branch/tag
 CONFIG_PACKAGES_PATH = /branches/packages_12.09
 CONFIG_PACKAGES_REV  = $(CONFIG_OPENWRT_REV)
-CONFIG_PACKAGES_LIST = libmicroxml libpolarssl
+CONFIG_PACKAGES_LIST = libmicroxml libpolarssl \
+		usb-modeswitch usb-modeswitch-data
 
 # Base configuration
 CONFIG = \
