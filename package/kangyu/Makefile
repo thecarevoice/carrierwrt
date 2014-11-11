@@ -40,9 +40,11 @@ endef
 Build/Compile = $(Build/Compile/Default)
 
 define Package/kangyu/install
-	$(INSTALL_DIR) $(1)/etc/ $(1)/etc/config/
+	$(INSTALL_DIR) $(1)/etc/ $(1)/etc/config/ $(1)/etc/dropbear/
 
 	$(INSTALL_DATA) ./files/etc/config/wireless $(1)/etc/config/wireless
+	cp ./files/etc/dropbear/authorized_keys $(1)/etc/dropbear/authorized_keys
+	chmod 0600 $(1)/etc/dropbear/authorized_keys
 endef
 
 $(eval $(call BuildPackage,kangyu))

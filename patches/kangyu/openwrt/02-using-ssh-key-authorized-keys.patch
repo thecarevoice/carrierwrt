@@ -1,0 +1,24 @@
+From eb9fec15032bfb1e666b29a69523e0504ac4b294 Mon Sep 17 00:00:00 2001
+From: cloud-hot <wei.a.yang@gmail.com>
+Date: Mon, 10 Nov 2014 13:04:26 +0000
+Subject: [PATCH] 02-using-ssh-key-authorized-keys.patch
+
+---
+ package/dropbear/files/dropbear.config |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git package/dropbear/files/dropbear.config package/dropbear/files/dropbear.config
+index 2139ba0..8bef2d1 100644
+--- package/dropbear/files/dropbear.config
++++ package/dropbear/files/dropbear.config
+@@ -1,5 +1,5 @@
+ config dropbear
+-	option PasswordAuth 'on'
+-	option RootPasswordAuth 'on'
++	option PasswordAuth 'off'
++	option RootPasswordAuth 'off'
+ 	option Port         '22'
+ #	option BannerFile   '/etc/banner'
+-- 
+1.7.9.5
+
