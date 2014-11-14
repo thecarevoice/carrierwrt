@@ -57,13 +57,12 @@ define Package/ncm/install
 		$(1)/etc/gcom/ $(1)/etc/gcom/ncm/ $(1)/etc/gcom/ncm/signal/ \
 		$(1)/etc/gcom/ncm/carrier/ $(1)/etc/gcom/ncm/setmode/ \
 		$(1)/etc/gcom/ncm/connect/ $(1)/etc/gcom/ncm/initscripts/ \
-		$(1)/etc/modules.d/ $(1)/etc/config/
+		$(1)/etc/modules.d/
 
 	$(INSTALL_BIN) ./files/lib/netifd/ncm_dhcp.script $(1)/lib/netifd/
 	$(INSTALL_BIN) ./files/lib/netifd/proto/ncm.sh $(1)/lib/netifd/proto/
 	$(INSTALL_DATA) ./files/etc/gcom/ncm/getcardinfo.gcom $(1)/etc/gcom/ncm/
 	$(INSTALL_DATA) ./files/etc/modules.d/60-usb-serial $(1)/etc/modules.d/60-usb-serial
-	$(INSTALL_DATA) ./files/etc/config/network $(1)/etc/config/network
 endef
 
 define Package/ncm-huawei-e3276/install

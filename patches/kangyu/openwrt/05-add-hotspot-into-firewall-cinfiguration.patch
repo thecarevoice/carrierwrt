@@ -1,0 +1,38 @@
+diff --git package/firewall/files/firewall.config package/firewall/files/firewall.config
+index 4a9dfaf..6bd06bc 100644
+--- package/firewall/files/firewall.config
++++ package/firewall/files/firewall.config
+@@ -28,6 +28,33 @@ config forwarding
+ 	option src		lan
+ 	option dest		wan
+ 
++# Add hotspot rules
++config zone
++	option name 'hotspot'
++	list network 'hotspot'
++	option output 'ACCEPT'
++	option forward 'REJECT'
++	option input 'ACCEPT'
++
++config forwarding
++	option src 'hotspot'
++	option dest 'wan'
++
++config rule
++	option name 'Allow-DNS-Queries'
++	option src 'hotspot'
++	option dest_port '53'
++	option proto 'tcpudp'
++	option target 'ACCEPT'
++
++config rule
++	option name 'Allow-DHCP-Request'
++	option src 'hotspot'
++	option dest_port '68'
++	option proto 'udp'
++	option target 'ACCEPT'
++	option family 'ipv4'
++
+ # We need to accept udp packets on port 68,
+ # see https://dev.openwrt.org/ticket/4108
+ config rule
