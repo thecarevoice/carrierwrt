@@ -28,7 +28,15 @@ define Customization/default
 		CONFIG_PACKAGE_luci-proto-ncm=y \
 		CONFIG_PACKAGE_mwan3=y \
 		CONFIG_PACKAGE_luci-app-mwan3=y \
-		CONFIG_PACKAGE_kangyu=y
+		CONFIG_PACKAGE_kangyu=y \
+		CONFIG_PACKAGE_haserl=y \
+		CONFIG_PACKAGE_coova-chilli=y \
+		CONFIG_COOVACHILLI_REDIR=y \
+		CONFIG_COOVACHILLI_MINIPORTAL=y \
+		CONFIG_COOVACHILLI_USERAGENT=y \
+		CONFIG_COOVACHILLI_DNSLOG=y \
+		CONFIG_COOVACHILLI_UAMDOMAINFILE=y \
+		CONFIG_COOVACHILLI_NOSSL=y
 
 	TESTED := \
 		ar71xx/openwrt-ar71xx-generic-dragino2-kernel.bin \
