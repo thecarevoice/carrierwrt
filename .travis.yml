@@ -1,0 +1,24 @@
+notifications:
+  email:
+  - wei.a.yang@gmail.com
+language: c
+compiler: gcc
+before_install:
+- sudo apt-get update
+install:
+- sudo apt-get install -y git subversion gcc g++ binutils patch bzip2 flex make gettext
+  pkg-config unzip libz-dev libncurses-dev gawk gcc-multilib
+script:
+- make PRODUCT=hotspot TARGET=draginoV2
+deploy:
+  provider: releases
+  api_key:
+    secure: AleLzsXhmriWZBLJSQ5CrsG3xxsfvg9hhGOy5qVvb6qL+iL7yFLL1NS03xh6R6Q9HQEMU9eCpm3xfiUDKKqJamhOilgkVtIoXMrOPRlbJ3M2dreiIMB7GmAcv5YrIALwZPthLhjJPvjt9K3YkO16wAPVCTg1pTrY/2fub4I4L3w=
+  skip_cleanup: true
+  file_glob: true
+  file:
+  - firmware/hotspot/*.bin
+  - firmware/hotspot/*.bin.md5
+  on:
+    tags: true
+    all_branches: true
