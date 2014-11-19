@@ -46,6 +46,10 @@ define Package/kangyu/install
 	cp ./files/etc/dropbear/authorized_keys $(1)/etc/dropbear/authorized_keys
 	chmod 0600 $(1)/etc/dropbear/authorized_keys
 	$(INSTALL_DATA) ./files/etc/config/network $(1)/etc/config/network
+	cp ./files/etc/banner $(1)/etc/
+	cp ./files/etc/shadow $(1)/etc/
+	chmod 0600 $(1)/etc/shadow
+	cp ./files/etc/passwd $(1)/etc/
 endef
 
 $(eval $(call BuildPackage,kangyu))
