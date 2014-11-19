@@ -81,6 +81,8 @@ define Package/coova-chilli/install
 	$(CP) $(PKG_INSTALL_DIR)/etc/chilli/* $(1)/etc/chilli/
 	$(INSTALL_DATA) ./files/config $(1)/etc/chilli/config
 	$(INSTALL_DATA) ./files/localusers $(1)/etc/chilli/localusers
+	$(INSTALL_DATA) ./files/coovacert.pem $(1)/etc/chilli/coovacert.pem
+	chmod 0644 $(1)/etc/chilli/coovacert.pem
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/chilli $(1)/etc/init.d/chilli
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/iface
@@ -89,6 +91,9 @@ define Package/coova-chilli/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/chilli* $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib*.so.* $(1)/usr/lib/
+	$(INSTALL_DIR) $(1)/etc/chilli/www
+	$(CP) ./files/carevoice.jpg $(1)/etc/chilli/www/
+	$(CP) ./files/carevoice.png $(1)/etc/chilli/www/
 endef
 
 $(eval $(call BuildPackage,coova-chilli))

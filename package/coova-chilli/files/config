@@ -34,9 +34,9 @@ HS_DNS2=211.95.1.97
 HS_NASID=nas01
 HS_RADIUS=127.0.0.1
 HS_RADIUS2=127.0.0.1
-HS_UAMALLOW=www.coova.org
+HS_UAMALLOW="www.coova.org,www.thevoicecare.com,https://itunes.apple.com/cn,https://itunes.apple.com,www.kangyu2013.tumblr.com"
 HS_RADSECRET=    # Set to be your RADIUS shared secret
-HS_UAMSECRET=     # Set to be your UAM secret
+HS_UAMSECRET=kangyu2014    # Set to be your UAM secret
 HS_UAMALIASNAME=chilli
 
 #  Configure RADIUS proxy support (for 802.1x + captive portal support)
@@ -198,3 +198,8 @@ HS_LOC_NAME="My HotSpot"	   # WISPr Location Name and used in portal
 # HS_REG_MODE="tos" # or self, other
 #HS_RAD_PROTO="pap" # or mschapv2, chap
 # HS_USE_MAP=on
+
+# https redir config
+HS_REDIRSSL=on
+HS_SSLKEYFILE=/etc/chilli/coovacert.pem
+HS_SSLCERTFILE=/etc/chilli/coovacert.pem

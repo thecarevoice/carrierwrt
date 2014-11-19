@@ -36,7 +36,7 @@ define Customization/default
 		CONFIG_COOVACHILLI_USERAGENT=y \
 		CONFIG_COOVACHILLI_DNSLOG=y \
 		CONFIG_COOVACHILLI_UAMDOMAINFILE=y \
-		CONFIG_COOVACHILLI_NOSSL=y
+		CONFIG_COOVACHILLI_OPENSSL=y
 
 	TESTED := \
 		ar71xx/openwrt-ar71xx-generic-dragino2-kernel.bin \
