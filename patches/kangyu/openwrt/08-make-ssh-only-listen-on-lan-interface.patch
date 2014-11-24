@@ -1,0 +1,8 @@
+--- package/dropbear/files/dropbear.config.orig	2014-11-22 12:19:50.050642331 +0000
++++ package/dropbear/files/dropbear.config	2014-11-22 12:20:44.042451617 +0000
+@@ -2,4 +2,5 @@
+ 	option PasswordAuth 'off'
+ 	option RootPasswordAuth 'off'
+ 	option Port         '22'
++	option Interface    'lan'
+ #	option BannerFile   '/etc/banner'
