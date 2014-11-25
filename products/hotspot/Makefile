@@ -66,6 +66,5 @@ define Customization/release
 	$(call Customization/default)
 
 	CONFIG += \
-		CONFIG_PACKAGE_dropbear=n \
 		CONFIG_PACKAGE_uhttpd=n
 endef
